@@ -1,0 +1,758 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="author" content="허창원">
+<meta name="description" content="LinkTurnAd v1.2.2 기준 스케줄 반영 경로·기기 통신 트래픽 현행 동작 정리">
+<title>LinkTurnAd 스케줄 반영·통신 현행 동작 정리 (v1.2.2)</title>
+<style>
+/* ─────────────────────────────────────────────────────────────
+   LinkTurnAd 기술 보고서 — 단일 파일 문서 (외부 리소스 0개)
+   오프라인 환경·USB 복사·사내 공유를 전제로 자급자족 구성
+   ───────────────────────────────────────────────────────────── */
+
+:root{
+  --bg:#f6f7f9;
+  --surface:#ffffff;
+  --surface-2:#fafbfc;
+  --ink:#181b1f;
+  --ink-2:#3d454e;
+  --muted:#6b7480;
+  --border:#e2e6ea;
+  --border-strong:#cdd4db;
+  --accent:#2f5bd7;
+  --accent-soft:#eef2fd;
+  --good:#0f7b52;
+  --good-soft:#e9f6f0;
+  --warn:#8a5a00;
+  --warn-soft:#fff7e3;
+  --warn-line:#e2a93b;
+  --bad:#b3261e;
+  --bad-soft:#fdecea;
+  --code-bg:#f2f4f7;
+  --shadow:0 1px 2px rgba(16,24,40,.05), 0 1px 3px rgba(16,24,40,.06);
+  --shadow-lg:0 4px 12px rgba(16,24,40,.07);
+  --radius:10px;
+  --sans:"Malgun Gothic","맑은 고딕",-apple-system,BlinkMacSystemFont,"Segoe UI",
+         "Apple SD Gothic Neo","Noto Sans KR",Roboto,"Helvetica Neue",Arial,sans-serif;
+  --mono:"D2Coding",Consolas,"Cascadia Mono","Courier New","D2Coding ligature",monospace;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#111318;
+    --surface:#1a1d23;
+    --surface-2:#20242b;
+    --ink:#e7eaee;
+    --ink-2:#c2c9d1;
+    --muted:#98a2ae;
+    --border:#2b3038;
+    --border-strong:#3a4149;
+    --accent:#8fb0ff;
+    --accent-soft:#1b2333;
+    --good:#4ec48e;
+    --good-soft:#132a22;
+    --warn:#e0aa4f;
+    --warn-soft:#2a2313;
+    --warn-line:#8a6a22;
+    --bad:#f08b82;
+    --bad-soft:#2e1a19;
+    --code-bg:#22262d;
+    --shadow:0 1px 2px rgba(0,0,0,.35);
+    --shadow-lg:0 6px 18px rgba(0,0,0,.4);
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#111318;
+  --surface:#1a1d23;
+  --surface-2:#20242b;
+  --ink:#e7eaee;
+  --ink-2:#c2c9d1;
+  --muted:#98a2ae;
+  --border:#2b3038;
+  --border-strong:#3a4149;
+  --accent:#8fb0ff;
+  --accent-soft:#1b2333;
+  --good:#4ec48e;
+  --good-soft:#132a22;
+  --warn:#e0aa4f;
+  --warn-soft:#2a2313;
+  --warn-line:#8a6a22;
+  --bad:#f08b82;
+  --bad-soft:#2e1a19;
+  --code-bg:#22262d;
+  --shadow:0 1px 2px rgba(0,0,0,.35);
+  --shadow-lg:0 6px 18px rgba(0,0,0,.4);
+}
+
+*,*::before,*::after{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:24px}
+body{
+  margin:0;background:var(--bg);color:var(--ink);
+  font-family:var(--sans);font-size:15.5px;line-height:1.75;
+  -webkit-font-smoothing:antialiased;word-break:keep-all;overflow-wrap:anywhere;
+}
+
+/* 읽기 진행 표시 */
+#progress{position:fixed;top:0;left:0;height:3px;width:0;background:var(--accent);z-index:60;transition:width .08s linear}
+
+/* 건너뛰기 링크 */
+.skip{position:absolute;left:-9999px;top:0;background:var(--accent);color:#fff;padding:10px 16px;z-index:99;border-radius:0 0 8px 0}
+.skip:focus{left:0}
+
+/* 레이아웃 */
+.layout{max-width:1280px;margin:0 auto;padding:0 24px;display:grid;grid-template-columns:264px minmax(0,1fr);gap:44px;align-items:start}
+
+/* ── 목차 ── */
+.toc{position:sticky;top:0;max-height:100vh;overflow-y:auto;padding:28px 0 40px;scrollbar-width:thin}
+.toc__brand{display:flex;align-items:center;gap:9px;margin-bottom:6px}
+.toc__dot{width:9px;height:9px;border-radius:50%;background:var(--accent);flex:none}
+.toc__brandname{font-size:12.5px;font-weight:700;letter-spacing:.06em;color:var(--muted);text-transform:uppercase}
+.toc__title{font-size:13.5px;font-weight:700;line-height:1.5;margin:0 0 16px;color:var(--ink-2)}
+.toc__label{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin:0 0 8px;padding-left:12px}
+.toc nav ol{list-style:none;margin:0;padding:0}
+.toc nav a{
+  display:block;padding:5px 12px;border-left:2px solid var(--border);
+  color:var(--muted);text-decoration:none;font-size:13.5px;line-height:1.5;
+  transition:color .12s,border-color .12s,background .12s;
+}
+.toc nav a:hover{color:var(--ink);background:var(--surface-2)}
+.toc nav a.is-active{color:var(--accent);border-left-color:var(--accent);font-weight:600;background:var(--accent-soft)}
+.toc nav .lv2 a{padding-left:26px;font-size:12.5px}
+.toc__tools{display:flex;gap:8px;margin-top:20px;padding-left:12px}
+.btn{
+  font:inherit;font-size:12px;padding:5px 11px;border-radius:7px;cursor:pointer;
+  background:var(--surface);color:var(--ink-2);border:1px solid var(--border-strong);
+  transition:background .12s,color .12s;
+}
+.btn:hover{background:var(--surface-2);color:var(--ink)}
+
+/* ── 본문 ── */
+main{padding:32px 0 96px;min-width:0}
+
+.doc-head{margin-bottom:34px}
+.eyebrow{display:inline-flex;align-items:center;gap:7px;font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);margin-bottom:12px}
+.eyebrow::before{content:"";width:16px;height:2px;background:var(--accent);border-radius:1px}
+h1{font-size:31px;line-height:1.32;margin:0 0 10px;letter-spacing:-.015em;font-weight:750}
+.lede{font-size:16px;color:var(--muted);margin:0 0 22px;line-height:1.65}
+
+.meta{
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:0 26px;
+  background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+  padding:16px 20px;box-shadow:var(--shadow);
+}
+.meta div{display:flex;gap:10px;padding:4px 0;font-size:13.5px;line-height:1.6}
+.meta dt{color:var(--muted);flex:none;min-width:64px;font-weight:600}
+.meta dd{margin:0;color:var(--ink-2)}
+
+/* ── KPI 타일 ── */
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(178px,1fr));gap:12px;margin:22px 0 6px}
+.kpi{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:15px 17px;box-shadow:var(--shadow)}
+.kpi__label{font-size:12.5px;color:var(--muted);margin-bottom:7px;font-weight:600}
+.kpi__value{font-size:27px;font-weight:700;letter-spacing:-.02em;line-height:1.15;color:var(--ink)}
+.kpi__unit{font-size:14px;font-weight:600;color:var(--muted);margin-left:3px}
+.kpi__delta{display:inline-flex;align-items:center;gap:5px;font-size:12px;margin-top:8px;font-weight:600;color:var(--muted)}
+.kpi__delta--good{color:var(--good)}
+.kpi__mark{font-size:11px;line-height:1}
+
+/* 제목 */
+h2{
+  font-size:22px;font-weight:720;letter-spacing:-.01em;margin:52px 0 16px;padding-top:14px;
+  border-top:1px solid var(--border);scroll-margin-top:20px;
+}
+h2 .num{color:var(--accent);font-variant-numeric:tabular-nums;margin-right:9px}
+h3{font-size:16.5px;font-weight:700;margin:30px 0 12px;color:var(--ink);scroll-margin-top:20px}
+h3 .num{color:var(--muted);font-variant-numeric:tabular-nums;margin-right:7px;font-weight:600}
+p{margin:0 0 14px}
+strong{font-weight:700;color:var(--ink)}
+a{color:var(--accent)}
+ul,ol{margin:0 0 16px;padding-left:22px}
+li{margin-bottom:7px}
+li::marker{color:var(--muted)}
+code{font-family:var(--mono);font-size:.88em;background:var(--code-bg);padding:.14em .42em;border-radius:5px;border:1px solid var(--border);word-break:break-all}
+
+/* 표 */
+.tw{overflow-x:auto;margin:0 0 18px;border:1px solid var(--border);border-radius:var(--radius);background:var(--surface);box-shadow:var(--shadow)}
+table{border-collapse:collapse;width:100%;font-size:14px;min-width:440px}
+th,td{padding:10px 14px;text-align:left;border-bottom:1px solid var(--border);vertical-align:top;line-height:1.6}
+thead th{background:var(--surface-2);font-weight:700;font-size:12.5px;letter-spacing:.02em;color:var(--ink-2);white-space:nowrap;border-bottom:1px solid var(--border-strong)}
+tbody tr:last-child td{border-bottom:0}
+tbody tr:hover{background:var(--surface-2)}
+td.num,th.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+tfoot td{background:var(--surface-2);font-weight:700;border-top:1px solid var(--border-strong)}
+.tag{display:inline-block;font-size:11.5px;font-weight:700;padding:1px 7px;border-radius:5px;line-height:1.7;white-space:nowrap}
+.tag--yes{background:var(--good-soft);color:var(--good)}
+.tag--no{background:var(--bad-soft);color:var(--bad)}
+.tag--warn{background:var(--warn-soft);color:var(--warn)}
+
+/* 콜아웃 */
+.note{border:1px solid var(--border);border-left:3px solid var(--border-strong);background:var(--surface);border-radius:0 var(--radius) var(--radius) 0;padding:14px 18px;margin:0 0 18px}
+.note > :last-child{margin-bottom:0}
+.note__t{display:flex;align-items:center;gap:7px;font-weight:700;font-size:13.5px;margin-bottom:6px}
+.note--warn{border-left-color:var(--warn-line);background:var(--warn-soft)}
+.note--warn .note__t{color:var(--warn)}
+.note--key{border-left-color:var(--accent);background:var(--accent-soft)}
+.note--key .note__t{color:var(--accent)}
+
+/* 흐름 단계 */
+.flow{list-style:none;margin:0 0 20px;padding:0;counter-reset:st}
+.flow li{position:relative;padding:0 0 20px 46px;counter-increment:st}
+.flow li::before{
+  content:counter(st);position:absolute;left:0;top:1px;width:28px;height:28px;border-radius:50%;
+  background:var(--accent-soft);color:var(--accent);border:1px solid var(--accent);
+  display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;
+}
+.flow li::after{content:"";position:absolute;left:13.5px;top:32px;bottom:0;width:1px;background:var(--border-strong)}
+.flow li:last-child{padding-bottom:0}
+.flow li:last-child::after{display:none}
+.flow__hd{display:flex;flex-wrap:wrap;align-items:baseline;gap:8px;margin-bottom:3px}
+.flow__t{font-weight:700;font-size:15px}
+.flow__time{font-family:var(--mono);font-size:11.5px;font-weight:700;padding:2px 8px;border-radius:20px;background:var(--surface-2);color:var(--ink-2);border:1px solid var(--border-strong);white-space:nowrap}
+.flow__time--fast{background:var(--good-soft);color:var(--good);border-color:var(--good)}
+.flow__d{font-size:13.5px;color:var(--muted);line-height:1.6}
+.flow__d code{font-size:.9em}
+
+/* 단계(서버/플레이어) */
+.steps{list-style:none;margin:0 0 18px;padding:0;counter-reset:sp}
+.steps > li{position:relative;padding:0 0 14px 34px;counter-increment:sp}
+.steps > li::before{
+  content:counter(sp);position:absolute;left:0;top:2px;width:22px;height:22px;border-radius:6px;
+  background:var(--surface-2);color:var(--ink-2);border:1px solid var(--border-strong);
+  display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;
+}
+.steps > li:last-child{padding-bottom:0}
+.steps b{display:block;margin-bottom:2px}
+
+/* 구분 배지 */
+.who{display:inline-block;font-size:11.5px;font-weight:700;letter-spacing:.04em;padding:2px 9px;border-radius:6px;margin-bottom:10px}
+.who--srv{background:var(--accent-soft);color:var(--accent)}
+.who--ply{background:var(--good-soft);color:var(--good)}
+
+.hint{font-size:13px;color:var(--muted);margin:-8px 0 18px}
+
+/* 맨 위로 */
+#totop{
+  position:fixed;right:22px;bottom:22px;width:42px;height:42px;border-radius:50%;
+  background:var(--surface);color:var(--ink-2);border:1px solid var(--border-strong);
+  box-shadow:var(--shadow-lg);cursor:pointer;font-size:17px;line-height:1;
+  opacity:0;pointer-events:none;transition:opacity .2s;z-index:50;
+}
+#totop.show{opacity:1;pointer-events:auto}
+#totop:hover{color:var(--accent);border-color:var(--accent)}
+
+footer{margin-top:56px;padding-top:20px;border-top:1px solid var(--border);font-size:13px;color:var(--muted)}
+
+/* 반응형 */
+@media (max-width:1040px){
+  .layout{grid-template-columns:1fr;gap:0;padding:0 18px}
+  .toc{position:static;max-height:none;padding:20px 0 0;border-bottom:1px solid var(--border)}
+  .toc nav{max-height:236px;overflow-y:auto}
+  .toc__title{margin-bottom:10px}
+  h1{font-size:25px}
+  main{padding-top:24px}
+}
+@media (max-width:520px){
+  body{font-size:15px}
+  .kpi__value{font-size:23px}
+  h2{font-size:19.5px}
+}
+
+/* 인쇄 */
+@media print{
+  :root{--bg:#fff;--surface:#fff;--surface-2:#fff;--shadow:none;--shadow-lg:none}
+  #progress,#totop,.toc__tools{display:none}
+  .layout{display:block;max-width:none;padding:0}
+  .toc{position:static;page-break-after:always;max-height:none}
+  main{padding:0}
+  h2{page-break-after:avoid}
+  .tw,table,.note,.flow li{page-break-inside:avoid}
+  a{color:inherit;text-decoration:none}
+}
+</style>
+</head>
+<body>
+<div id="progress"></div>
+<a class="skip" href="#doc">본문 바로가기</a>
+
+<div class="layout">
+
+<aside class="toc">
+  <div class="toc__brand"><span class="toc__dot"></span><span class="toc__brandname">LinkTurnAd</span></div>
+  <p class="toc__title">스케줄 반영·통신 현행 동작 정리 <span style="color:var(--muted);font-weight:600">v1.2.2</span></p>
+  <p class="toc__label">목차</p>
+  <nav id="toc" aria-label="문서 목차">
+    <ol>
+      <li><a href="#summary">요약</a></li>
+      <li><a href="#s1">1. 스케줄 저장 후 반영 과정</a>
+        <ol class="lv2">
+          <li><a href="#s1-1">1.1 전체 흐름</a></li>
+          <li><a href="#s1-2">1.2 소요 시간</a></li>
+          <li><a href="#s1-3">1.3 폴백</a></li>
+          <li><a href="#s1-4">1.4 시각 도래 전환</a></li>
+        </ol>
+      </li>
+      <li><a href="#s2">2. 기기당 트래픽</a>
+        <ol class="lv2">
+          <li><a href="#s2-1">2.1 실측값</a></li>
+          <li><a href="#s2-2">2.2 스케줄 응답 크기</a></li>
+          <li><a href="#s2-3">2.3 콘텐츠 다운로드</a></li>
+          <li><a href="#s2-4">2.4 절감 여지</a></li>
+        </ol>
+      </li>
+      <li><a href="#s3">3. 스케줄이 여러 개일 때</a>
+        <ol class="lv2">
+          <li><a href="#s3-1">3.1 서버 — 4단계 합성</a></li>
+          <li><a href="#s3-2">3.2 플레이어 — 재생</a></li>
+        </ol>
+      </li>
+      <li><a href="#s4">4. 통신 빈도</a></li>
+      <li><a href="#s5">5. 송출 중 재생목록 수정</a></li>
+      <li><a href="#s6">6. v1.2.1 대비 달라진 점</a></li>
+    </ol>
+  </nav>
+  <div class="toc__tools">
+    <button class="btn" id="theme" type="button" aria-label="화면 테마 전환">◐ 테마</button>
+    <button class="btn" id="print" type="button">인쇄</button>
+  </div>
+</aside>
+
+<main id="doc">
+
+<header class="doc-head">
+  <div class="eyebrow">기술 보고서 · 현행 동작</div>
+  <h1>스케줄 반영·통신 현행 동작 정리</h1>
+  <p class="lede">관리자가 저장한 편성이 현장 기기에 도달하기까지의 경로와, 그 대가로 발생하는 통신량을 v1.2.2 기준으로 정리한다.</p>
+
+  <dl class="meta">
+    <div><dt>작성일</dt><dd>2026-08-07 15:20</dd></div>
+    <div><dt>대상</dt><dd>backend · ad-player <strong>v1.2.2</strong> (2026-08-07 개선 적용 후)</dd></div>
+    <div><dt>측정 방식</dt><dd>편성 조립 코드 + 실제 express·helmet 스택으로 <strong>HTTP 왕복 바이트 실측</strong> <span style="color:var(--warn)">(⚠ 실 서버 부하 측정은 미수행)</span></dd></div>
+    <div><dt>선행 문서</dt><dd>점검 보고서(20260807_1033_RPRT) · 개선 Work List(20260807_1058_WRKL)</dd></div>
+    <div><dt>작성자</dt><dd>허창원</dd></div>
+    <div><dt>AI 지원</dt><dd>Claude Code Assistant</dd></div>
+  </dl>
+
+  <div class="kpis">
+    <div class="kpi">
+      <div class="kpi__label">편성 반영 지연 (최대)</div>
+      <div class="kpi__value">2분 15초</div>
+      <div class="kpi__delta kpi__delta--good"><span class="kpi__mark" aria-hidden="true">▼</span>개선 · v1.2.1 5분</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi__label">기기당 트래픽</div>
+      <div class="kpi__value">115<span class="kpi__unit">MB / 월</span></div>
+      <div class="kpi__delta"><span class="kpi__mark" aria-hidden="true">＝</span>변화 없음</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi__label">기기당 서버 요청</div>
+      <div class="kpi__value">104<span class="kpi__unit">회 / 시간</span></div>
+      <div class="kpi__delta"><span class="kpi__mark" aria-hidden="true">＝</span>변화 없음</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi__label">기기당 bcrypt 대조</div>
+      <div class="kpi__value">12<span class="kpi__unit">회 / 시간</span></div>
+      <div class="kpi__delta kpi__delta--good"><span class="kpi__mark" aria-hidden="true">▼</span>개선 · v1.2.1 104회</div>
+    </div>
+  </div>
+</header>
+
+<h2 id="summary">요약</h2>
+<div class="tw">
+<table>
+  <thead><tr><th style="width:38%">질문</th><th>답</th></tr></thead>
+  <tbody>
+    <tr><td>스케줄 저장 → 기기 반영 시간</td><td>새 편성 수신 <strong>최대 2분 15초</strong>(평균 약 1분), 화면 전환은 현재 광고가 끝난 뒤</td></tr>
+    <tr><td>기기당 트래픽</td><td><strong>시간당 164 KB · 하루 3.85 MB · 월 115 MB</strong> (콘텐츠 다운로드 별도)</td></tr>
+    <tr><td>스케줄 여러 개일 때</td><td>후보 선별 → 우선순위 대체(또는 혼합) → 가중 라운드로빈 → 캐시 완료분만 재생</td></tr>
+    <tr><td>통신 빈도</td><td><strong>시간당 약 104회</strong> (≈1.7회/분). 재생 자체는 서버를 쓰지 않음</td></tr>
+    <tr><td>송출 중 재생목록 수정</td><td>9단계(§5). <strong>현재 광고는 끊기지 않고 끝까지 재생</strong>된 뒤 교체</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h2 id="s1"><span class="num">1.</span>스케줄을 저장하면 얼마 만에, 어떤 과정으로 반영되나</h2>
+
+<p>서버가 기기를 호출하는 푸시 채널은 <strong>여전히 없다.</strong> 대신 <strong>이미 2분마다 오가는 하트비트에 “편성이 바뀌었다”는 신호(편성 epoch)를 실어</strong> 보내고, 기기가 그것을 보고 스스로 앞당겨 조회한다.</p>
+
+<h3 id="s1-1"><span class="num">1.1</span>전체 흐름</h3>
+
+<ol class="flow">
+  <li>
+    <div class="flow__hd"><span class="flow__t">관리자가 스케줄 저장</span><span class="flow__time flow__time--fast">즉시</span></div>
+    <div class="flow__d">backend 모델 훅이 편성 epoch 를 +1</div>
+  </li>
+  <li>
+    <div class="flow__hd"><span class="flow__t">기기의 다음 하트비트 (2분 주기)</span><span class="flow__time">0 ~ 120초 · 평균 60초</span></div>
+    <div class="flow__d">응답: <code>{ "scheduleEpoch": 1785063422 }</code></div>
+  </li>
+  <li>
+    <div class="flow__hd"><span class="flow__t">플레이어: “내가 아는 값과 다르다” → 지터 대기</span><span class="flow__time">0 ~ 15초</span></div>
+    <div class="flow__d">전 기기가 한 초에 몰리는 것을 막는 분산</div>
+  </li>
+  <li>
+    <div class="flow__hd"><span class="flow__t">스케줄 즉시 재조회</span><span class="flow__time flow__time--fast">&lt; 1초</span></div>
+    <div class="flow__d"><code>GET /schedule/:deviceId</code> → <code>scheduleVersion</code> 이 달라짐 → 적용 시작</div>
+  </li>
+  <li>
+    <div class="flow__hd"><span class="flow__t">캐시 동기화</span><span class="flow__time">신규 파일 없으면 &lt; 1초</span></div>
+    <div class="flow__d">신규 파일이 있으면 지터 0~1분 + 다운로드 시간</div>
+  </li>
+  <li>
+    <div class="flow__hd"><span class="flow__t">재생 중인 광고가 끝날 때 목록 교체</span><span class="flow__time">0 ~ 현재 광고 길이</span></div>
+    <div class="flow__d">중간에 끊지 않는다</div>
+  </li>
+  <li>
+    <div class="flow__hd"><span class="flow__t">새 편성 송출 시작</span></div>
+  </li>
+</ol>
+
+<h3 id="s1-2"><span class="num">1.2</span>소요 시간</h3>
+<div class="tw">
+<table>
+  <thead><tr><th style="width:44%">구간</th><th>시간</th></tr></thead>
+  <tbody>
+    <tr><td>①→④ <strong>새 편성 수신</strong></td><td><strong>최대 2분 15초</strong> (평균 약 1분)</td></tr>
+    <tr><td>⑤ 캐시 동기화</td><td>신규 파일 없으면 1초 미만 · 있으면 지터 0~1분 + 다운로드</td></tr>
+    <tr><td>⑥ <strong>화면 전환까지</strong></td><td>현재 광고 잔여 재생시간 (표준 60초 광고면 최대 +60초)</td></tr>
+    <tr><td><strong>합계 (신규 파일 없을 때)</strong></td><td><strong>최대 약 3분 15초 · 평균 약 1분 30초</strong></td></tr>
+  </tbody>
+</table>
+</div>
+
+<div class="note note--key">
+  <div class="note__t"><span aria-hidden="true">★</span>⑥ 은 지연이 아니라 의도된 동작이다</div>
+  <p>재생 중인 광고를 중간에 끊으면 그 회차의 재생로그가 남지 않아 <strong>광고주 정산 근거가 사라진다.</strong> (v1.2.1 까지는 실제로 끊고 있었고, 그것이 결함 D 였다.)</p>
+</div>
+
+<h3 id="s1-3"><span class="num">1.3</span>폴백 — 신호를 못 받아도 반영은 된다</h3>
+<div class="tw">
+<table>
+  <thead><tr><th style="width:34%">상황</th><th>동작</th></tr></thead>
+  <tbody>
+    <tr><td>하트비트 실패(일시 단절)</td><td>다음 하트비트에서 재시도. 마지막 epoch 를 잃지 않아 오검출도 없음</td></tr>
+    <tr><td>기기가 구버전 플레이어</td><td>epoch 를 읽지 않음 → <strong>종전대로 5분 폴링</strong>으로 반영 (하위 호환)</td></tr>
+    <tr><td>backend 재기동</td><td>epoch 가 새로 출발 → 각 기기가 스케줄을 <strong>1회 더 조회</strong>할 뿐 (놓치는 쪽이 아니라 확인하는 쪽으로 틀림)</td></tr>
+    <tr><td>서버 완전 단절</td><td>마지막 편성을 <code>localStorage</code> 에서 읽어 <strong>오프라인 계속 재생</strong></td></tr>
+  </tbody>
+</table>
+</div>
+
+<h3 id="s1-4"><span class="num">1.4</span>시각 도래에 의한 전환은 여전히 최대 5분</h3>
+<div class="note note--warn">
+  <div class="note__t"><span aria-hidden="true">⚠</span>epoch 는 관리자 조작만 앞당긴다</div>
+  <p>편성 epoch 는 <strong>관리자 조작</strong>을 앞당길 뿐 <strong>시각 경과</strong>를 앞당기지 않는다.</p>
+  <p style="margin-bottom:8px">예: <code>TIME_START=09:00</code> 편성은 09:00 정각이 아니라 <strong>09:00 ~ 09:05 사이 폴링에서</strong> 시작된다.</p>
+  <p>플레이어는 편성 규칙(기간·요일·시간대)을 갖고 있지 않고 “지금 이 순간의 결과”만 받기 때문이다(§2). 분 단위 정확도가 필요한 편성이 생기면 별도 설계가 필요하다.</p>
+</div>
+
+<h2 id="s2"><span class="num">2.</span>기기당 트래픽 — 서버가 스케줄을 관리하는 비용</h2>
+
+<p>플레이어는 편성 규칙을 갖지 않고, 서버가 <strong>요청 시점 기준으로 합성한 평면 항목 배열 1개</strong>만 받는다. 그 대신 주기적으로 물어봐야 하므로 다음 트래픽이 발생한다.</p>
+
+<h3 id="s2-1"><span class="num">2.1</span>실측값 (헤더 포함 · 압축 미적용)</h3>
+<div class="tw">
+<table>
+  <thead><tr><th>호출</th><th class="num">시간당</th><th class="num">요청</th><th class="num">응답</th><th class="num">왕복</th><th class="num">시간당</th></tr></thead>
+  <tbody>
+    <tr><td>스케줄 GET (항목 10건)</td><td class="num">12회</td><td class="num">418 B</td><td class="num">2,435 B</td><td class="num">2,853 B</td><td class="num"><strong>33.4 KB</strong></td></tr>
+    <tr><td>하트비트 POST</td><td class="num">30회</td><td class="num">576 B</td><td class="num">865 B</td><td class="num">1,441 B</td><td class="num"><strong>42.2 KB</strong></td></tr>
+    <tr><td>재생로그 POST (1건)</td><td class="num">≤60회</td><td class="num">602 B</td><td class="num">864 B</td><td class="num">1,466 B</td><td class="num"><strong>85.9 KB</strong></td></tr>
+    <tr><td>위젯 GET (날씨)</td><td class="num">2회</td><td class="num">417 B</td><td class="num">937 B</td><td class="num">1,354 B</td><td class="num"><strong>2.6 KB</strong></td></tr>
+  </tbody>
+  <tfoot><tr><td colspan="5">합계</td><td class="num">164.2 KB</td></tr></tfoot>
+</table>
+</div>
+
+<div class="tw">
+<table>
+  <thead><tr><th>기간</th><th class="num">기기 1대</th><th class="num">100대</th></tr></thead>
+  <tbody>
+    <tr><td>시간당</td><td class="num"><strong>164 KB</strong></td><td class="num">16 MB</td></tr>
+    <tr><td>하루</td><td class="num"><strong>3.85 MB</strong></td><td class="num">385 MB</td></tr>
+    <tr><td>30일</td><td class="num"><strong>115 MB</strong></td><td class="num"><strong>11.3 GB</strong></td></tr>
+    <tr><td>평균 대역폭</td><td class="num">0.37 kbps</td><td class="num">37 kbps</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h3 id="s2-2"><span class="num">2.2</span>스케줄 응답 크기 (항목 수별)</h3>
+<div class="tw">
+<table>
+  <thead><tr><th style="width:50%">항목 수</th><th class="num">본문</th></tr></thead>
+  <tbody>
+    <tr><td>1건</td><td class="num">335 B</td></tr>
+    <tr><td>5건</td><td class="num">924 B</td></tr>
+    <tr><td>10건</td><td class="num">1,658 B</td></tr>
+    <tr><td>20건</td><td class="num">3,129 B</td></tr>
+    <tr><td>50건</td><td class="num">7,538 B</td></tr>
+    <tr><td>10건 + 공지</td><td class="num">1,769 B</td></tr>
+  </tbody>
+</table>
+</div>
+<p class="hint">항목 1건당 약 <strong>147 B</strong> 씩 늘어난다. 50건짜리 편성이어도 7.5 KB 로, 5분마다 받아도 시간당 90 KB 수준이다.</p>
+
+<h3 id="s2-3"><span class="num">2.3</span>콘텐츠 다운로드는 별도이며 이것이 압도적이다</h3>
+<p>위 수치는 <strong>제어 트래픽만</strong>이다. 광고 영상은 편성이 바뀌어 새 파일이 생길 때 <strong>1회만</strong> 내려받고, 이후 재생은 로컬 디스크에서 한다(서버 트래픽 0).</p>
+<div class="note note--key">
+  <div class="note__t"><span aria-hidden="true">★</span>관리 대상은 폴링이 아니라 콘텐츠 교체 빈도</div>
+  <p>영상 1편(예: 80 MB)을 새로 받으면, <strong>그 한 번이 제어 트래픽 20일치</strong>에 해당한다. 즉 대역폭 관점에서 실제로 관리해야 할 것은 폴링이 아니라 <strong>콘텐츠 교체 빈도</strong>다.</p>
+</div>
+
+<h3 id="s2-4"><span class="num">2.4</span>참고 — 절감 여지 (현재는 조치 안 함)</h3>
+<ul>
+  <li><strong>헤더가 본문보다 크다</strong>: 하트비트 왕복 1,441 B 중 실제 데이터는 207 B(14%)이고 나머지는 HTTP 헤더다. helmet 의 CSP 헤더(약 250 B)가 API 응답에도 그대로 붙는다.</li>
+  <li><strong>gzip 미적용</strong>: 플레이어는 <code>Accept-Encoding: gzip</code> 을 보내지만 backend 에 압축 미들웨어가 없다. 스케줄 응답(1.6 KB, JSON)은 압축 시 60~70% 줄어든다.</li>
+  <li>현재 규모에서 절감액이 무의미해 조치하지 않았다. <strong>기기 수백 대 또는 종량제 회선</strong>에서만 검토 대상이다.</li>
+</ul>
+
+<h2 id="s3"><span class="num">3.</span>스케줄이 여러 개일 때의 송출 절차</h2>
+<p>기기 1대에 GLOBAL·ORG·REGION·DEVICE 편성이 동시에 걸릴 수 있다. 서버가 <strong>요청 시점에</strong> 다음 순서로 하나의 목록을 만든다.</p>
+
+<h3 id="s3-1"><span class="num">3.1</span>서버 — 4단계 합성</h3>
+<div class="who who--srv">SERVER</div>
+
+<ol class="steps">
+  <li>
+    <b>후보 선별 — 다음을 모두 통과한 편성만 남긴다</b>
+    <div class="tw" style="margin-top:8px">
+      <table>
+        <thead><tr><th style="width:24%">조건</th><th>내용</th></tr></thead>
+        <tbody>
+          <tr><td>사용 여부</td><td><code>USE_YN = 1</code></td></tr>
+          <tr><td>기간</td><td><code>START_DATE</code> ≤ 오늘 ≤ <code>END_DATE</code> (<code>END_DATE</code> 없으면 무기한)</td></tr>
+          <tr><td>요일</td><td><code>DAYS_OF_WEEK</code> 비트마스크(월~일)에서 오늘 자리가 <code>1</code></td></tr>
+          <tr><td>시간대</td><td><code>TIME_START</code> ~ <code>TIME_END</code> 안 (미지정=종일, 자정 넘김 지원)</td></tr>
+          <tr><td>스코프</td><td><code>GLOBAL</code>(전체) · <code>DEVICE</code>(기기ID) · <code>ORG</code>(단체) · <code>REGION</code>(시도·구군) 중 이 기기에 해당</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </li>
+  <li>
+    <b>우선순위 판정</b>
+    <div class="tw" style="margin-top:8px">
+      <table>
+        <thead><tr><th style="width:20%">방식</th><th style="width:34%">조건</th><th>결과</th></tr></thead>
+        <tbody>
+          <tr><td><strong>대체(replace)</strong></td><td>기본</td><td><code>PRIORITY</code> 최댓값 그룹의 항목만 송출, <strong>하위는 전부 무시</strong></td></tr>
+          <tr><td><strong>혼합(mix)</strong></td><td>최상위 그룹에 <code>MIX_RATIO</code> 가 있고 하위 그룹도 존재</td><td>상·하위 노출량을 <code>비율 : (100-비율)</code> 로 근사해 <strong>둘 다</strong> 송출</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="note" style="margin-top:10px">
+      <p style="margin:0">예) GLOBAL(우선순위 0) + ORG(우선순위 10) → <strong>ORG 만</strong> 송출.<br>
+      ORG 에 <code>MIX_RATIO=70</code> 을 주면 → ORG 70% : GLOBAL 30% 로 섞어 송출.</p>
+    </div>
+  </li>
+  <li>
+    <b>항목 조립</b>
+    승인(<code>APPROVED</code>)되고 사용 중(<code>USE_YN=1</code>)인 콘텐츠만 <code>SEQ</code> 순으로 담는다. 레이아웃은 최상위 그룹 중 <code>SCHEDULE_ID</code> 가 가장 작은 편성의 재생목록 <code>LAYOUT_ID</code> 를 쓴다.
+  </li>
+  <li>
+    <b>버전 계산</b>
+    기여한 편성·재생목록·콘텐츠의 최신 수정시각 + 항목구성 해시 + 공지 시그니처를 합쳐 <code>scheduleVersion</code> 을 만든다. 플레이어는 <strong>이 값이 같으면 응답 전체를 버린다.</strong>
+  </li>
+</ol>
+
+<h3 id="s3-2"><span class="num">3.2</span>플레이어 — 재생</h3>
+<div class="who who--ply">PLAYER</div>
+
+<ol class="steps" style="counter-reset:sp 4">
+  <li>
+    <b>가중 라운드로빈</b>
+    <code>WEIGHT</code> 기반 smooth WRR(nginx 알고리즘)로 한 사이클 순서를 만들고 무한 순환한다.
+    <div class="note" style="margin-top:10px">
+      <p style="margin:0">예) A(weight 3) · B(weight 1) → <code>A A B A</code> 순서로 고르게 분산. 같은 weight 면 <code>SEQ</code> 오름차순.</p>
+    </div>
+  </li>
+  <li>
+    <b>캐시 완료분만 재생</b>
+    다운로드가 끝난 항목만 재생하고, 미완료 항목은 건너뛴다. 전 항목이 미완료면 기본 화면(fallback)을 띄운다.
+  </li>
+  <li>
+    <b>재생 완료마다 로그 적재</b>
+    60초 주기 배치 업로드.
+  </li>
+</ol>
+
+<h2 id="s4"><span class="num">4.</span>통신 빈도</h2>
+<div class="tw">
+<table>
+  <thead><tr><th>호출</th><th class="num">주기</th><th class="num">시간당</th><th>조건</th></tr></thead>
+  <tbody>
+    <tr><td><code>GET /api/signage/schedule/:deviceId</code></td><td class="num">300초</td><td class="num">12회</td><td>서버가 응답에 실어 지시</td></tr>
+    <tr><td><code>POST /api/signage/heartbeat</code></td><td class="num">120초</td><td class="num">30회</td><td>항상 (<strong>편성 epoch 를 여기서 받는다</strong>)</td></tr>
+    <tr><td><code>POST /api/signage/play-logs</code></td><td class="num">60초</td><td class="num">≤60회</td><td>보낼 로그가 없으면 요청 자체를 안 보냄</td></tr>
+    <tr><td><code>GET /api/signage/widgets/:deviceId</code></td><td class="num">30분</td><td class="num">2회</td><td>날씨</td></tr>
+    <tr><td>편성 변경 시 추가 조회</td><td class="num">—</td><td class="num">변경당 1회</td><td>epoch 통지를 받았을 때만</td></tr>
+    <tr><td>콘텐츠 파일 GET</td><td class="num">—</td><td class="num">0회</td><td>새 파일이 생길 때만</td></tr>
+  </tbody>
+  <tfoot><tr><td colspan="2">합계</td><td class="num">약 104회/시간</td><td>≈ 1.7회/분</td></tr></tfoot>
+</table>
+</div>
+
+<h3>서버와 통신하지 않는 것 <span style="font-weight:600;color:var(--muted);font-size:14px">(오해 방지)</span></h3>
+<ul>
+  <li><strong>광고 재생</strong>: 로컬 <code>signage://</code> 프로토콜로 디스크에서 직접 스트리밍</li>
+  <li><strong>메인 프로세스 5분 생존 하트비트</strong>: 로컬 로그 파일 기록</li>
+  <li><strong>제어판 10초 갱신</strong>: 로컬 IPC (디스플레이 정보·캐시 목록)</li>
+  <li><strong>소속 단체 정보</strong>: 설정 저장·토큰 수령·수동 새로고침 3시점에만</li>
+</ul>
+
+<h3>서버 측 처리 비용 (요청 1건당)</h3>
+<div class="tw">
+<table>
+  <thead><tr><th style="width:30%">항목</th><th>현재</th></tr></thead>
+  <tbody>
+    <tr><td>기기 행 SELECT</td><td>1회 (미들웨어가 읽은 것을 컨트롤러가 재사용)</td></tr>
+    <tr><td>토큰 대조</td><td>bcrypt는 <strong>5분에 1회만</strong> — 나머지는 캐시 적중 (기기당 시간당 약 12회)</td></tr>
+    <tr><td>스케줄 질의</td><td>이 기기에 도달 가능한 스코프만 (인덱스 <code>IDX_SCHED_SCOPE</code> 사용)</td></tr>
+    <tr><td>재생로그 적재</td><td><code>INSERT IGNORE</code> <strong>1회</strong> (COUNT 없음)</td></tr>
+  </tbody>
+</table>
+</div>
+
+<h2 id="s5"><span class="num">5.</span>송출 중에 재생목록이 수정되면</h2>
+
+<div class="who who--srv">SERVER</div>
+<ol class="steps">
+  <li><b><code>PUT /api/signage/playlists/:id/items</code></b> 트랜잭션 안에서 기존 항목 <strong>전체 삭제 후 재생성</strong>(새 <code>ITEM_ID</code> 발급) + 재생목록 수정시각 갱신</li>
+  <li><b>모델 훅이 편성 epoch +1</b> (즉시)</li>
+  <li><b>다음 스케줄 요청 때 <code>scheduleVersion</code> 재계산</b> 항목구성 해시가 달라져 <strong>반드시 변경으로 감지</strong>된다</li>
+</ol>
+
+<div class="who who--ply" style="margin-top:20px">PLAYER</div>
+<ol class="steps" style="counter-reset:sp 3">
+  <li><b>하트비트 응답에서 epoch 변화 감지</b> (0~120초) → 지터 0~15초 → 스케줄 재조회</li>
+  <li><b><code>scheduleVersion</code> 불일치 → 적용 시작</b> 새 항목 목록을 <code>localStorage</code> 에 저장</li>
+  <li><b>캐시 동기화</b> 로컬에 없는 파일만 순차 다운로드 → MP4 시그니처 검증(실패 시 1회 재시도)</li>
+  <li><b>편성에서 빠진 파일 삭제</b> + 캐시 상한(10 GB) 정리</li>
+  <li><b>재생 중인 광고가 끝날 때까지 대기</b> → 끝나면 새 목록으로 교체 <span class="tag tag--warn">중간에 끊지 않는다</span></li>
+  <li><b>새 목록의 첫 재생 가능 항목부터 송출</b> 끝난 항목의 재생로그는 정상 적재되어 60초 내 업로드</li>
+</ol>
+
+<h3>반영 대상 — 무엇을 고치면 기기가 받아가나</h3>
+<div class="tw">
+<table>
+  <thead><tr><th>관리자 조작</th><th style="width:15%">반영</th></tr></thead>
+  <tbody>
+    <tr><td>재생목록 항목 추가·삭제·순서·가중치·오버레이</td><td><span class="tag tag--yes">반영</span></td></tr>
+    <tr><td>재생목록 레이아웃(FULL/BANNER/TICKER) 변경</td><td><span class="tag tag--yes">반영</span></td></tr>
+    <tr><td>재생목록 제목 변경</td><td><span class="tag tag--yes">반영</span></td></tr>
+    <tr><td>스케줄 기간·요일·시간대·우선순위·혼합비율 수정</td><td><span class="tag tag--yes">반영</span></td></tr>
+    <tr><td>스케줄 생성·삭제</td><td><span class="tag tag--yes">반영</span></td></tr>
+    <tr><td>콘텐츠 승인·승인취소·삭제</td><td><span class="tag tag--yes">반영</span></td></tr>
+    <tr><td>긴급 공지 등록·문구수정·표시방식변경</td><td><span class="tag tag--yes">반영</span></td></tr>
+    <tr><td>긴급 공지 해제·기간 만료</td><td><span class="tag tag--yes">화면에서 걷힌다</span></td></tr>
+    <tr><td>아무것도 안 바꿈</td><td><span class="tag">버전 고정</span></td></tr>
+  </tbody>
+</table>
+</div>
+
+<div class="note note--warn">
+  <div class="note__t"><span aria-hidden="true">⚠</span>v1.2.1 까지는 4항목이 반영되지 않았다</div>
+  <p>표의 <strong>레이아웃·제목·공지 관련 4항목</strong>은 버전 계산에서 빠져 있어 플레이어가 응답을 통째로 버렸다. v1.2.2 에서 전부 반영된다.</p>
+</div>
+
+<h2 id="s6"><span class="num">6.</span>v1.2.1 대비 달라진 점 (요약)</h2>
+<div class="tw">
+<table>
+  <thead><tr><th style="width:26%">항목</th><th style="width:37%">v1.2.1</th><th>v1.2.2</th></tr></thead>
+  <tbody>
+    <tr><td>편성 반영 지연</td><td>최대 5분</td><td><strong>최대 2분 15초</strong> (평균 약 1분)</td></tr>
+    <tr><td>재생 중 광고</td><td>편성 변경 시 <strong>중간에 끊김</strong> + 그 회차 로그 유실</td><td><strong>끝까지 재생 후 교체</strong></td></tr>
+    <tr><td>공지 등록·해제</td><td><span class="tag tag--no">반영 안 됨</span></td><td><span class="tag tag--yes">반영</span></td></tr>
+    <tr><td>레이아웃·제목 변경</td><td><span class="tag tag--no">반영 안 됨</span></td><td><span class="tag tag--yes">반영</span></td></tr>
+    <tr><td>편성 없는 기기</td><td>5분마다 “변경됨” 오판</td><td>버전 고정</td></tr>
+    <tr><td>스케줄 질의</td><td>활성 스케줄 <strong>전체</strong> 조인</td><td>해당 기기 스코프만</td></tr>
+    <tr><td>bcrypt</td><td>기기당 시간당 약 104회</td><td>약 <strong>12회</strong></td></tr>
+    <tr><td>재생로그 적재</td><td>DB 질의 3회(COUNT 2 + INSERT)</td><td><strong>1회</strong></td></tr>
+    <tr><td>재생로그 보존</td><td>정책 없음(무한 누적)</td><td>13개월 정리 CLI</td></tr>
+    <tr><td>기기당 트래픽</td><td>실질 동일</td><td>실질 동일 (<strong>164 KB/시간</strong>)</td></tr>
+  </tbody>
+</table>
+</div>
+
+<div class="note note--key">
+  <div class="note__t"><span aria-hidden="true">★</span>트래픽 총량은 개선 전후가 같다</div>
+  <p>줄인 것은 <strong>서버의 처리 비용</strong>(DB 질의·CPU)이고, 반영 지연은 <strong>추가 요청 없이</strong> 하트비트에 신호를 실어 단축했다.</p>
+</div>
+
+<footer>
+  <p>LinkTurnAd — 링크턴 43인치 모니터 광고(사이니지) 시스템 · 문서 버전 v1.2.2 기준 (2026-08-07)<br>
+  작성자 허창원 · AI 지원 Claude Code Assistant<br>
+  원본 Markdown: <code>20260807_1520_RPRT_LinkTurnAd_Schedule_Propagation_Current_Behavior_v1.2.2.md</code></p>
+</footer>
+
+</main>
+</div>
+
+<button id="totop" type="button" title="맨 위로" aria-label="맨 위로">↑</button>
+
+<script>
+(function(){
+  "use strict";
+
+  /* 테마 — 시스템 설정 → 수동 전환(auto → light → dark 순환), 선택은 저장하지 않는다
+     (사내 문서를 여러 PC 로 복사해 열기 때문에 로컬 저장은 오히려 혼란을 준다) */
+  var order = ["auto","light","dark"], idx = 0, root = document.documentElement;
+  document.getElementById("theme").addEventListener("click", function(){
+    idx = (idx + 1) % order.length;
+    if (order[idx] === "auto") root.removeAttribute("data-theme");
+    else root.setAttribute("data-theme", order[idx]);
+    this.textContent = order[idx] === "auto" ? "◐ 테마" : (order[idx] === "light" ? "☀ 밝게" : "☾ 어둡게");
+  });
+
+  document.getElementById("print").addEventListener("click", function(){ window.print(); });
+
+  /* 읽기 진행 + 맨 위로 */
+  var bar = document.getElementById("progress"), top = document.getElementById("totop");
+  function onScroll(){
+    var h = document.documentElement.scrollHeight - window.innerHeight;
+    bar.style.width = (h > 0 ? (window.scrollY / h) * 100 : 0) + "%";
+    top.classList.toggle("show", window.scrollY > 600);
+  }
+  window.addEventListener("scroll", onScroll, { passive:true });
+  window.addEventListener("resize", onScroll);
+  onScroll();
+
+  top.addEventListener("click", function(){ window.scrollTo({ top:0, behavior:"smooth" }); });
+
+  /* 목차 활성 표시 — 화면에 보이는 것 중 가장 위 제목을 현재 위치로 본다.
+     IntersectionObserver 만으로 판정하면 빠르게 스크롤할 때 활성 항목이 튀므로,
+     보이는 제목 집합을 유지하고 그중 최상단을 고른다. */
+  var links = {}, visible = {};
+  Array.prototype.forEach.call(document.querySelectorAll("#toc a"), function(a){
+    links[a.getAttribute("href").slice(1)] = a;
+  });
+  var heads = document.querySelectorAll("main h2[id], main h3[id]");
+
+  function paint(){
+    var ids = Object.keys(visible).filter(function(k){ return visible[k]; });
+    var pick = null, best = Infinity;
+    ids.forEach(function(id){
+      var t = document.getElementById(id).getBoundingClientRect().top;
+      if (t < best) { best = t; pick = id; }
+    });
+    if (!pick) return;
+    Object.keys(links).forEach(function(k){ links[k].classList.toggle("is-active", k === pick); });
+    var el = links[pick];
+    if (el && el.offsetParent) {
+      var box = el.closest(".toc");
+      if (box && box.scrollHeight > box.clientHeight) {
+        var r = el.getBoundingClientRect(), b = box.getBoundingClientRect();
+        if (r.top < b.top + 40 || r.bottom > b.bottom - 40) el.scrollIntoView({ block:"center" });
+      }
+    }
+  }
+
+  if ("IntersectionObserver" in window) {
+    var io = new IntersectionObserver(function(entries){
+      entries.forEach(function(e){ visible[e.target.id] = e.isIntersecting; });
+      paint();
+    }, { rootMargin:"-8% 0px -70% 0px", threshold:0 });
+    Array.prototype.forEach.call(heads, function(h){ io.observe(h); });
+  }
+})();
+</script>
+</body>
+</html>

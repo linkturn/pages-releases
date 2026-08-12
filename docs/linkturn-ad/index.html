@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>링크턴 광고 플레이어 - 설치파일 다운로드</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Malgun Gothic', 'Segoe UI', Tahoma, sans-serif; background-color: #f5f7fa; color: #333; line-height: 1.6; }
+        header { background: linear-gradient(135deg, #00695c, #00897b); color: white; padding: 2rem 1rem; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.15); }
+        header h1 { font-size: 1.7rem; font-weight: 600; margin-bottom: 0.3rem; }
+        header p { font-size: 0.95rem; opacity: 0.9; }
+        .container { max-width: 820px; margin: 2rem auto; padding: 0 1rem; }
+        .card { background: white; border-radius: 8px; padding: 1.5rem; margin-bottom: 1.5rem; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
+        .card h2 { font-size: 1.1rem; color: #00695c; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 2px solid #e0f2f1; }
+        .card p { font-size: 0.9rem; color: #555; }
+        .file-list { list-style: none; }
+        .file-item { display: flex; align-items: center; justify-content: space-between; padding: 0.8rem 1rem; border: 1px solid #e0f2f1; border-radius: 6px; margin-bottom: 0.5rem; transition: background-color 0.2s, box-shadow 0.2s; }
+        .file-item:hover { background-color: #e0f2f1; box-shadow: 0 2px 6px rgba(0,0,0,0.06); }
+        .file-info { flex: 1; min-width: 0; }
+        .file-name { font-size: 0.9rem; font-weight: 500; color: #333; word-break: break-all; }
+        .file-meta { font-size: 0.8rem; color: #888; margin-top: 0.2rem; }
+        .file-version { display: inline-block; background: #e0f2f1; color: #00695c; padding: 0.1rem 0.5rem; border-radius: 3px; font-size: 0.75rem; font-weight: 600; margin-right: 0.4rem; }
+        .file-latest { display: inline-block; background: #00695c; color: white; padding: 0.1rem 0.5rem; border-radius: 3px; font-size: 0.7rem; font-weight: 600; margin-right: 0.4rem; }
+        .download-btn { display: inline-flex; align-items: center; gap: 0.3rem; background: #00897b; color: white; text-decoration: none; padding: 0.5rem 1rem; border-radius: 5px; font-size: 0.85rem; font-weight: 500; transition: background-color 0.2s; white-space: nowrap; flex-shrink: 0; margin-left: 1rem; }
+        .download-btn:hover { background: #00695c; }
+        .download-btn svg { width: 16px; height: 16px; fill: currentColor; }
+        .no-files { text-align: center; padding: 2rem; color: #888; }
+        ol.steps { margin: 0 0 0 1.2rem; font-size: 0.9rem; color: #444; }
+        ol.steps > li { margin-bottom: 0.7rem; }
+        ol.steps code, .card code { background: #f1f3f4; padding: 0.1rem 0.35rem; border-radius: 3px; font-size: 0.85em; }
+        .note { background: #fff8e1; border-left: 4px solid #ffb300; padding: 0.8rem 1rem; border-radius: 4px; font-size: 0.85rem; color: #6d4c41; margin-top: 1rem; }
+        .sub { font-size: 0.85rem; color: #777; margin-top: 0.6rem; }
+        footer { text-align: center; padding: 1.5rem 1rem; color: #999; font-size: 0.8rem; }
+        footer a { color: #00897b; text-decoration: none; }
+        footer a:hover { text-decoration: underline; }
+        @media (max-width: 600px) {
+            header h1 { font-size: 1.3rem; }
+            .file-item { flex-direction: column; align-items: flex-start; gap: 0.5rem; }
+            .download-btn { margin-left: 0; width: 100%; justify-content: center; }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>링크턴 광고 플레이어</h1>
+        <p>LinkTurnAd Player &mdash; 자원회수기 43인치 세로형 광고 송출 프로그램</p>
+    </header>
+    <div class="container">
+        <div class="card">
+            <h2>설치파일 다운로드 (zip)</h2>
+            <ul class="file-list">
+                <li class="file-item">
+                    <div class="file-info">
+                        <div class="file-name">LinkTurnAd-Player_v1.3.2_Build_20260811_1941_Setup.zip</div>
+                        <div class="file-meta">
+                            <span class="file-latest">최신</span>
+                            <span class="file-version">v1.3.2</span>
+                            빌드: 2026-08-11 19:41 &middot; 76.9 MB
+                            &middot; 압축 안: <code>LinkTurnAd-Player_v1.3.2_Build_20260811_1941_Setup.exe</code>
+                        </div>
+                    </div>
+                    <a class="download-btn" href="./LinkTurnAd-Player_v1.3.2_Build_20260811_1941_Setup.zip" download>
+                        <svg viewBox="0 0 24 24"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
+                        다운로드
+                    </a>
+                </li>
+                <li class="file-item">
+                    <div class="file-info">
+                        <div class="file-name">LinkTurnAd-Player_v1.3.1_Build_20260811_1934_Setup.zip</div>
+                        <div class="file-meta">
+                            
+                            <span class="file-version">v1.3.1</span>
+                            빌드: 2026-08-11 19:34 &middot; 76.9 MB
+                            &middot; 압축 안: <code>LinkTurnAd-Player_v1.3.1_Build_20260811_1934_Setup.exe</code>
+                        </div>
+                    </div>
+                    <a class="download-btn" href="./LinkTurnAd-Player_v1.3.1_Build_20260811_1934_Setup.zip" download>
+                        <svg viewBox="0 0 24 24"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
+                        다운로드
+                    </a>
+                </li>
+                <li class="file-item">
+                    <div class="file-info">
+                        <div class="file-name">LinkTurnAd-Player_v1.3.1_Build_20260811_1912_Setup.zip</div>
+                        <div class="file-meta">
+                            
+                            <span class="file-version">v1.3.1</span>
+                            빌드: 2026-08-11 19:12 &middot; 76.9 MB
+                            &middot; 압축 안: <code>LinkTurnAd-Player_v1.3.1_Build_20260811_1912_Setup.exe</code>
+                        </div>
+                    </div>
+                    <a class="download-btn" href="./LinkTurnAd-Player_v1.3.1_Build_20260811_1912_Setup.zip" download>
+                        <svg viewBox="0 0 24 24"><path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/></svg>
+                        다운로드
+                    </a>
+                </li>
+            </ul>
+            <p class="sub">파일명의 <code>v버전_Build_날짜_시각</code> 이 빌드 시점입니다. 특별한 사유가 없으면 <strong>최신</strong> 파일을 사용하세요.
+            브라우저 다운로드 경고를 줄이기 위해 설치파일을 <strong>zip 으로 압축</strong>해 올립니다 &mdash; 압축을 풀어 사용하세요.</p>
+        </div>
+        <div class="card">
+            <h2>설치 방법 (현장 기기 PC)</h2>
+            <ol class="steps">
+                <li><strong>다운로드</strong> &mdash; 위 목록에서 최신 <code>..._Setup.zip</code> 을 내려받습니다.</li>
+                <li><strong>압축 풀기</strong> &mdash; 내려받은 zip 을 마우스 오른쪽 &rarr; <strong>압축 풀기(모두 압축 풀기)</strong> 로 풉니다.
+                    zip 안을 미리보기 상태에서 바로 실행하면 설치가 실패할 수 있으니, <strong>반드시 풀어서</strong> 나온 <code>..._Setup.exe</code> 를 사용합니다.</li>
+                <li><strong>실행</strong> &mdash; <code>..._Setup.exe</code> 를 실행하면 관리자 권한(UAC) 확인 창이 뜹니다. <strong>예</strong> 를 누릅니다.
+                    &ldquo;Windows에서 PC를 보호했습니다&rdquo; 화면이 나오면 <strong>추가 정보 &rarr; 실행</strong> 으로 진행합니다.</li>
+                <li><strong>설치</strong> &mdash; 기본 경로 <code>C:\LinkTech\LinkTurnAd</code> 에 설치됩니다.
+                    설치 과정에서 코드서명 인증서 신뢰 등록과 부팅 시 자동 실행 등록이 함께 수행됩니다.</li>
+                <li><strong>기기 설정</strong> &mdash; 설치 후 열리는 <strong>제어판</strong> 에서 서버 주소와 기기 ID 를 입력해 저장합니다.
+                    관리자에게 받은 <strong>간편 설정 코드(4자리)</strong> 가 있으면 코드만 입력해도 디바이스 토큰이 자동 설정됩니다(발급 후 30분 이내).</li>
+                <li><strong>확인</strong> &mdash; 43인치 세로형 모니터(1080&times;1920)에 광고 화면이 표시되는지 확인합니다.
+                    콘텐츠는 내려받아 캐시된 뒤 재생되므로 최초 실행 직후에는 기본 화면이 잠시 보일 수 있습니다.</li>
+            </ol>
+            <div class="note">
+                제어판을 닫은 뒤 다시 열려면 바탕화면(또는 시작 메뉴)의 <strong>링크턴 광고 플레이어</strong> 바로가기를 실행하세요.
+                프로그램을 완전히 종료할 때는 제어판의 <strong>프로그램 완전 종료</strong> 를 사용합니다(창만 닫으면 자동으로 다시 열립니다).
+            </div>
+        </div>
+    </div>
+    <footer>
+        &copy; 링크텍 (LinkTech) &nbsp;&middot;&nbsp;
+        <a href="https://linktech2010.co.kr" target="_blank" rel="noopener">linktech2010.co.kr</a>
+        &nbsp;&middot;&nbsp; 갱신: 2026-08-11 19:43
+    </footer>
+</body>
+</html>
